@@ -20,9 +20,33 @@ var app = builder.Build();
 // Enable the CORS policy defined above
 app.UseCors("AllowFrontend");
 
+// Returns distinct book categories for the category filter dropdown.
+app.MapGet("/api/books/categories", () =>
+{
+    var connectionString = "Data Source=C:\\Users\\madid\\OneDrive\\Desktop\\is 413\\mission_11\\Bookstore.sqlite";
+    using var connection = new SqliteConnection(connectionString);
+    connection.Open();
+
+    using var categoryCommand = connection.CreateCommand();
+    categoryCommand.CommandText = @"
+        SELECT DISTINCT Classification
+        FROM Books
+        WHERE Classification IS NOT NULL AND TRIM(Classification) <> ''
+        ORDER BY Classification;";
+
+    var categories = new List<string>();
+    using var reader = categoryCommand.ExecuteReader();
+    while (reader.Read())
+    {
+        categories.Add(reader.GetString(0));
+    }
+
+    return Results.Ok(categories);
+});
+
 // Simple API endpoint that reads books from the SQLite database
 // and returns a single page of results sorted by title.
-app.MapGet("/api/books", (int page, int pageSize, string sortDir) =>
+app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? category) =>
 {
     // Path to the Bookstore.sqlite database file, now kept inside this solution folder
     // so the whole mission_11 project is self-contained.
@@ -31,9 +55,18 @@ app.MapGet("/api/books", (int page, int pageSize, string sortDir) =>
     using var connection = new SqliteConnection(connectionString);
     connection.Open();
 
-    // Get the total number of books so the frontend can calculate total pages
+    var hasCategoryFilter = !string.IsNullOrWhiteSpace(category);
+
+    // Get the total number of books so the frontend can calculate total pages.
+    // If category is selected, only count books in that category.
     using var countCommand = connection.CreateCommand();
-    countCommand.CommandText = "SELECT COUNT(*) FROM Books;";
+    countCommand.CommandText = hasCategoryFilter
+        ? "SELECT COUNT(*) FROM Books WHERE Classification = $category;"
+        : "SELECT COUNT(*) FROM Books;";
+    if (hasCategoryFilter)
+    {
+        countCommand.Parameters.AddWithValue("$category", category);
+    }
     var totalCount = Convert.ToInt32(countCommand.ExecuteScalar());
 
     // Sanitize sort direction coming from the query string
@@ -42,11 +75,14 @@ app.MapGet("/api/books", (int page, int pageSize, string sortDir) =>
         : "ASC";
 
     // Basic guard rails for paging inputs
-    var limit = pageSize <= 0 ? 5 : pageSize;
-    var offset = (page <= 0 ? 0 : (page - 1) * limit);
+    var currentPageSize = pageSize.GetValueOrDefault(5);
+    var currentPage = page.GetValueOrDefault(1);
+    var limit = currentPageSize <= 0 ? 5 : currentPageSize;
+    var offset = (currentPage <= 0 ? 0 : (currentPage - 1) * limit);
 
-    // Pull back only a single page of books, ordered by title
+    // Pull back only a single page of books, optionally filtered by category.
     using var dataCommand = connection.CreateCommand();
+    var whereClause = hasCategoryFilter ? "WHERE Classification = $category" : string.Empty;
     dataCommand.CommandText = $@"
         SELECT Title,
                Author,
@@ -56,11 +92,16 @@ app.MapGet("/api/books", (int page, int pageSize, string sortDir) =>
                PageCount,
                Price
         FROM Books
+        {whereClause}
         ORDER BY Title {sortDirection}
         LIMIT $limit OFFSET $offset;";
 
     dataCommand.Parameters.AddWithValue("$limit", limit);
     dataCommand.Parameters.AddWithValue("$offset", offset);
+    if (hasCategoryFilter)
+    {
+        dataCommand.Parameters.AddWithValue("$category", category);
+    }
 
     var books = new List<BookDto>();
 
