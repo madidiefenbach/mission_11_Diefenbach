@@ -240,9 +240,39 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="container my-4">
-      <h1 className="mb-3">Online Bookstore</h1>
-      <p className="text-muted mb-4">Browse books from the bookstore database.</p>
+    <>
+      {/* Bootstrap Navbar: sticky header + cart badge (always visible) */}
+      <nav
+        className="navbar navbar-expand-lg navbar-dark bg-dark position-sticky top-0 shadow-sm"
+        aria-label="Top navigation"
+      >
+        <div className="container">
+          <span className="navbar-brand fw-semibold">Online Bookstore</span>
+
+          {/* Bootstrap Utility: d-flex + ms-auto to push actions to the right */}
+          <div className="d-flex ms-auto align-items-center gap-2">
+            <button
+              className="btn btn-outline-light position-relative"
+              onClick={() => setViewMode('cart')}
+              aria-label="Open shopping cart"
+            >
+              View Cart
+
+              {/* Bootstrap Badge: rounded-pill + positioning utilities for a count bubble */}
+              <span
+                className="badge text-bg-warning rounded-pill position-absolute top-0 start-100 translate-middle"
+                style={{ transform: 'translate(-35%, 35%)' }}
+              >
+                {cartItemCount}
+              </span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container my-4">
+        <h1 className="mb-3">Online Bookstore</h1>
+        <p className="text-muted mb-4">Browse books from the bookstore database.</p>
 
       {/* Bootstrap Grid: row + col-* controls responsive page structure */}
       <div className="row g-4">
@@ -471,7 +501,8 @@ const App: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
