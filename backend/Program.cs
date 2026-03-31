@@ -220,14 +220,23 @@ app.MapDelete("/api/books/{id:int}", (int id) =>
     var rowsDeleted = command.ExecuteNonQuery();
     return rowsDeleted == 0 ? Results.NotFound() : Results.NoContent();
 });
-app.MapGet("/db-check", () =>
+app.MapGet("/db-table-check", () =>
 {
     var dbPath = Path.Combine(AppContext.BaseDirectory, "Bookstore.sqlite");
-    return Results.Ok(new
+    using var connection = new SqliteConnection($"Data Source={dbPath}");
+    connection.Open();
+
+    using var command = connection.CreateCommand();
+    command.CommandText = "SELECT name FROM sqlite_master WHERE type='table';";
+
+    var tables = new List<string>();
+    using var reader = command.ExecuteReader();
+    while (reader.Read())
     {
-        dbPath,
-        exists = File.Exists(dbPath)
-    });
+        tables.Add(reader.GetString(0));
+    }
+
+    return Results.Ok(tables);
 });
 app.Run();
 
