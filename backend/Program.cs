@@ -110,15 +110,15 @@ app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? cat
         // Map each row from the database into our BookDto model
         var book = new BookDto
     {
-        BookId = reader.GetInt32(0),
-        Title = reader.GetString(1),
-        Author = reader.GetString(2),
-        Publisher = reader.GetString(3),
-        Isbn = reader.GetString(4),
-        Classification = reader.GetString(5),
-        Category = reader.GetString(6),
-        PageCount = reader.GetInt32(7),
-        Price = Convert.ToDecimal(reader.GetDouble(8))
+        BookId = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+        Title = reader.IsDBNull(1) ? "" : reader.GetString(1),
+        Author = reader.IsDBNull(2) ? "" : reader.GetString(2),
+        Publisher = reader.IsDBNull(3) ? "" : reader.GetString(3),
+        Isbn = reader.IsDBNull(4) ? "" : reader.GetString(4),
+        Classification = reader.IsDBNull(5) ? "" : reader.GetString(5),
+        Category = reader.IsDBNull(6) ? "" : reader.GetString(6),
+        PageCount = reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+        Price = reader.IsDBNull(8) ? 0 : Convert.ToDecimal(reader.GetDouble(8))
     };
         books.Add(book);
     }
