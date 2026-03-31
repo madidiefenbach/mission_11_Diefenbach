@@ -109,7 +109,6 @@ app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? cat
     {
         // Map each row from the database into our BookDto model
         var book = new BookDto
-        var book = new BookDto
     {
         BookId = reader.GetInt32(0),
         Title = reader.GetString(1),
