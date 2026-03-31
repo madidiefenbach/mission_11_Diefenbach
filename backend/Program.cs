@@ -238,6 +238,44 @@ app.MapGet("/api/books/test", () =>
         return Results.Problem(ex.ToString());
     }
 });
+app.MapGet("/api/books/debug", () =>
+{
+    try
+    {
+        using var connection = new SqliteConnection(connectionString);
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+            SELECT BookID, Title, Author, Publisher, ISBN, Classification, Category, PageCount, Price
+            FROM Books
+            LIMIT 1;";
+
+        using var reader = command.ExecuteReader();
+
+        if (!reader.Read())
+            return Results.Ok(new { message = "No rows found" });
+
+        return Results.Ok(new
+        {
+            BookID = reader.GetValue(0)?.ToString(),
+            Title = reader.GetValue(1)?.ToString(),
+            Author = reader.GetValue(2)?.ToString(),
+            Publisher = reader.GetValue(3)?.ToString(),
+            ISBN = reader.GetValue(4)?.ToString(),
+            Classification = reader.GetValue(5)?.ToString(),
+            Category = reader.GetValue(6)?.ToString(),
+            PageCount = reader.GetValue(7)?.ToString(),
+            Price = reader.GetValue(8)?.ToString(),
+            PriceType = reader.GetFieldType(8).FullName
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.ToString());
+    }
+});
+
 app.Run();
 
 static string? ValidateBook(BookDto book)
