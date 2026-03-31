@@ -220,29 +220,7 @@ app.MapDelete("/api/books/{id:int}", (int id) =>
     var rowsDeleted = command.ExecuteNonQuery();
     return rowsDeleted == 0 ? Results.NotFound() : Results.NoContent();
 });
-app.MapGet("/db-column-check", () =>
-{
-    var dbPath = Path.Combine(AppContext.BaseDirectory, "Bookstore.sqlite");
-    using var connection = new SqliteConnection($"Data Source={dbPath}");
-    connection.Open();
-
-    using var command = connection.CreateCommand();
-    command.CommandText = "PRAGMA table_info(Books);";
-
-    var columns = new List<object>();
-    using var reader = command.ExecuteReader();
-    while (reader.Read())
-    {
-        columns.Add(new
-        {
-            cid = reader.GetInt32(0),
-            name = reader.GetString(1),
-            type = reader.GetString(2)
-        });
-    }
-
-    return Results.Ok(columns);
-});
+app.MapGet("/", () => "Book API is running");
 app.Run();
 
 static string? ValidateBook(BookDto book)
