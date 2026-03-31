@@ -10,5 +10,12 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
   </ItemGroup>
 
+<ItemGroup>
+    <None Update="Bookstore.sqlite">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
 </Project>
 
