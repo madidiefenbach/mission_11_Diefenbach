@@ -220,6 +220,24 @@ app.MapDelete("/api/books/{id:int}", (int id) =>
     return rowsDeleted == 0 ? Results.NotFound() : Results.NoContent();
 });
 app.MapGet("/", () => "Book API is running");
+app.MapGet("/api/books/test", () =>
+{
+    try
+    {
+        using var connection = new SqliteConnection(connectionString);
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM Books;";
+
+        var count = Convert.ToInt32(command.ExecuteScalar());
+        return Results.Ok(new { success = true, count });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.ToString());
+    }
+});
 app.Run();
 
 static string? ValidateBook(BookDto book)
