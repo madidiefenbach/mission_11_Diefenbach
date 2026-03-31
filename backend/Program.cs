@@ -16,6 +16,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+var connectionString = "Data Source=C:\\Users\\madid\\OneDrive\\Desktop\\is 413\\mission_11\\Bookstore.sqlite";
 
 // Enable the CORS policy defined above
 app.UseCors("AllowFrontend");
@@ -23,7 +24,6 @@ app.UseCors("AllowFrontend");
 // Returns distinct book categories for the category filter dropdown.
 app.MapGet("/api/books/categories", () =>
 {
-    var connectionString = "Data Source=C:\\Users\\madid\\OneDrive\\Desktop\\is 413\\mission_11\\Bookstore.sqlite";
     using var connection = new SqliteConnection(connectionString);
     connection.Open();
 
@@ -48,10 +48,6 @@ app.MapGet("/api/books/categories", () =>
 // and returns a single page of results sorted by title.
 app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? category) =>
 {
-    // Path to the Bookstore.sqlite database file, now kept inside this solution folder
-    // so the whole mission_11 project is self-contained.
-    var connectionString = "Data Source=C:\\Users\\madid\\OneDrive\\Desktop\\is 413\\mission_11\\Bookstore.sqlite";
-
     using var connection = new SqliteConnection(connectionString);
     connection.Open();
 
@@ -84,11 +80,13 @@ app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? cat
     using var dataCommand = connection.CreateCommand();
     var whereClause = hasCategoryFilter ? "WHERE Classification = $category" : string.Empty;
     dataCommand.CommandText = $@"
-        SELECT Title,
+        SELECT BookID,
+               Title,
                Author,
                Publisher,
                ISBN,
                Classification,
+               Category,
                PageCount,
                Price
         FROM Books
@@ -111,13 +109,15 @@ app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? cat
         // Map each row from the database into our BookDto model
         var book = new BookDto
         {
-            Title = reader.GetString(0),
-            Author = reader.GetString(1),
-            Publisher = reader.GetString(2),
-            Isbn = reader.GetString(3),
-            Classification = reader.GetString(4),
-            PageCount = reader.GetInt32(5),
-            Price = reader.GetDecimal(6)
+            BookId = reader.GetInt32(0),
+            Title = reader.GetString(1),
+            Author = reader.GetString(2),
+            Publisher = reader.GetString(3),
+            Isbn = reader.GetString(4),
+            Classification = reader.GetString(5),
+            Category = reader.GetString(6),
+            PageCount = reader.GetInt32(7),
+            Price = reader.GetDecimal(8)
         };
 
         books.Add(book);
@@ -134,4 +134,115 @@ app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? cat
     return Results.Ok(result);
 });
 
+app.MapPost("/api/books", (BookDto newBook) =>
+{
+    var validationError = ValidateBook(newBook);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(validationError);
+    }
+
+    using var connection = new SqliteConnection(connectionString);
+    connection.Open();
+
+    using var command = connection.CreateCommand();
+    command.CommandText = @"
+        INSERT INTO Books (Title, Author, Publisher, ISBN, Classification, Category, PageCount, Price)
+        VALUES ($title, $author, $publisher, $isbn, $classification, $category, $pageCount, $price);
+        SELECT last_insert_rowid();";
+    command.Parameters.AddWithValue("$title", newBook.Title.Trim());
+    command.Parameters.AddWithValue("$author", newBook.Author.Trim());
+    command.Parameters.AddWithValue("$publisher", newBook.Publisher.Trim());
+    command.Parameters.AddWithValue("$isbn", newBook.Isbn.Trim());
+    command.Parameters.AddWithValue("$classification", newBook.Classification.Trim());
+    command.Parameters.AddWithValue("$category", newBook.Category.Trim());
+    command.Parameters.AddWithValue("$pageCount", newBook.PageCount);
+    command.Parameters.AddWithValue("$price", newBook.Price);
+
+    var id = Convert.ToInt32(command.ExecuteScalar());
+    newBook.BookId = id;
+    return Results.Created($"/api/books/{id}", newBook);
+});
+
+app.MapPut("/api/books/{id:int}", (int id, BookDto updatedBook) =>
+{
+    var validationError = ValidateBook(updatedBook);
+    if (validationError is not null)
+    {
+        return Results.BadRequest(validationError);
+    }
+
+    using var connection = new SqliteConnection(connectionString);
+    connection.Open();
+
+    using var command = connection.CreateCommand();
+    command.CommandText = @"
+        UPDATE Books
+        SET Title = $title,
+            Author = $author,
+            Publisher = $publisher,
+            ISBN = $isbn,
+            Classification = $classification,
+            Category = $category,
+            PageCount = $pageCount,
+            Price = $price
+        WHERE BookID = $id;";
+    command.Parameters.AddWithValue("$id", id);
+    command.Parameters.AddWithValue("$title", updatedBook.Title.Trim());
+    command.Parameters.AddWithValue("$author", updatedBook.Author.Trim());
+    command.Parameters.AddWithValue("$publisher", updatedBook.Publisher.Trim());
+    command.Parameters.AddWithValue("$isbn", updatedBook.Isbn.Trim());
+    command.Parameters.AddWithValue("$classification", updatedBook.Classification.Trim());
+    command.Parameters.AddWithValue("$category", updatedBook.Category.Trim());
+    command.Parameters.AddWithValue("$pageCount", updatedBook.PageCount);
+    command.Parameters.AddWithValue("$price", updatedBook.Price);
+
+    var rowsUpdated = command.ExecuteNonQuery();
+    if (rowsUpdated == 0)
+    {
+        return Results.NotFound();
+    }
+
+    updatedBook.BookId = id;
+    return Results.Ok(updatedBook);
+});
+
+app.MapDelete("/api/books/{id:int}", (int id) =>
+{
+    using var connection = new SqliteConnection(connectionString);
+    connection.Open();
+
+    using var command = connection.CreateCommand();
+    command.CommandText = "DELETE FROM Books WHERE BookID = $id;";
+    command.Parameters.AddWithValue("$id", id);
+
+    var rowsDeleted = command.ExecuteNonQuery();
+    return rowsDeleted == 0 ? Results.NotFound() : Results.NoContent();
+});
+
 app.Run();
+
+static string? ValidateBook(BookDto book)
+{
+    if (string.IsNullOrWhiteSpace(book.Title) ||
+        string.IsNullOrWhiteSpace(book.Author) ||
+        string.IsNullOrWhiteSpace(book.Publisher) ||
+        string.IsNullOrWhiteSpace(book.Isbn) ||
+        string.IsNullOrWhiteSpace(book.Classification) ||
+        string.IsNullOrWhiteSpace(book.Category))
+    {
+        return "Title, Author, Publisher, ISBN, Classification, and Category are required.";
+    }
+
+    if (book.PageCount <= 0)
+    {
+        return "PageCount must be greater than zero.";
+    }
+
+    if (book.Price < 0)
+    {
+        return "Price must be zero or greater.";
+    }
+
+    return null;
+}

@@ -251,6 +251,9 @@ const App: React.FC = () => {
 
           {/* Bootstrap Utility: d-flex + ms-auto to push actions to the right */}
           <div className="d-flex ms-auto align-items-center gap-2">
+            <a className="btn btn-outline-info" href="/adminbooks">
+              Admin Books
+            </a>
             <button
               className="btn btn-outline-light position-relative"
               onClick={() => setViewMode('cart')}
