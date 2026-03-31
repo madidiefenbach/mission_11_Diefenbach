@@ -220,7 +220,15 @@ app.MapDelete("/api/books/{id:int}", (int id) =>
     var rowsDeleted = command.ExecuteNonQuery();
     return rowsDeleted == 0 ? Results.NotFound() : Results.NoContent();
 });
-app.MapGet("/", () => "Book API is running");
+app.MapGet("/db-check", () =>
+{
+    var dbPath = Path.Combine(AppContext.BaseDirectory, "Bookstore.sqlite");
+    return Results.Ok(new
+    {
+        dbPath,
+        exists = File.Exists(dbPath)
+    });
+});
 app.Run();
 
 static string? ValidateBook(BookDto book)
