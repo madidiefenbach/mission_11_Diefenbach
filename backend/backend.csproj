@@ -12,8 +12,3 @@
 
 </Project>
 
-- name: Build with dotnet
-  run: dotnet build Mission11/Mission11.csproj --configuration Release
-
-- name: dotnet publish
-  run: dotnet publish Mission11/Mission11.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
