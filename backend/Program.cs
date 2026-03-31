@@ -16,7 +16,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-var connectionString = "Data Source=C:\\Users\\madid\\OneDrive\\Desktop\\is 413\\mission_11\\Bookstore.sqlite";
+var dbPath = Path.Combine(AppContext.BaseDirectory, "Bookstore.sqlite");
+var connectionString = $"Data Source={dbPath}";
 
 // Enable the CORS policy defined above
 app.UseCors("AllowFrontend");
