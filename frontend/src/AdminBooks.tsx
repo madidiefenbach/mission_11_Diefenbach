@@ -38,6 +38,7 @@ const textFields: TextField[] = ['title', 'author', 'publisher', 'isbn', 'classi
 const AdminBooks: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([])
   const [form, setForm] = useState<BookForm>(emptyForm)
+  const [pageCountInput, setPageCountInput] = useState('1')
   const [priceInput, setPriceInput] = useState('0.00')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -66,6 +67,13 @@ const AdminBooks: React.FC = () => {
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    if (name === 'pageCount') {
+      const normalizedValue = value.replace(/[^0-9]/g, '')
+      setPageCountInput(normalizedValue)
+      setForm((prev) => ({ ...prev, pageCount: Number(normalizedValue || 0) }))
+      return
+    }
+
     if (name === 'price') {
       const normalizedValue = value.replace(/[^0-9.]/g, '')
       setPriceInput(normalizedValue)
@@ -81,6 +89,7 @@ const AdminBooks: React.FC = () => {
 
   const resetForm = () => {
     setForm(emptyForm)
+    setPageCountInput('1')
     setPriceInput('0.00')
     setEditingId(null)
   }
@@ -88,12 +97,17 @@ const AdminBooks: React.FC = () => {
   const submitBook = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    const parsedPageCount = Number(pageCountInput)
+    if (Number.isNaN(parsedPageCount) || parsedPageCount <= 0) {
+      setError('Please enter a valid page count greater than 0.')
+      return
+    }
     const parsedPrice = Number(priceInput)
     if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
       setError('Please enter a valid non-negative price.')
       return
     }
-    const normalizedForm = { ...form, price: parsedPrice }
+    const normalizedForm = { ...form, pageCount: parsedPageCount, price: parsedPrice }
 
     const method = editingId ? 'PUT' : 'POST'
     const url = editingId ? `${apiBase}/${editingId}` : apiBase
@@ -126,6 +140,7 @@ const AdminBooks: React.FC = () => {
       pageCount: book.pageCount,
       price: book.price,
     })
+    setPageCountInput(book.pageCount.toString())
     setPriceInput(book.price.toFixed(2))
   }
 
@@ -170,12 +185,13 @@ const AdminBooks: React.FC = () => {
           <input
             id="pageCountInput"
             className="form-control"
-            type="number"
+            type="text"
+            inputMode="numeric"
             name="pageCount"
-            min={1}
             placeholder="Page Count"
-            value={form.pageCount}
+            value={pageCountInput}
             onChange={onInputChange}
+            onBlur={() => setPageCountInput(form.pageCount > 0 ? form.pageCount.toString() : '1')}
             required
           />
         </div>
