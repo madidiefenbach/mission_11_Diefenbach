@@ -221,7 +221,6 @@ app.MapDelete("/api/books/{id:int}", (int id) =>
     var rowsDeleted = command.ExecuteNonQuery();
     return rowsDeleted == 0 ? Results.NotFound() : Results.NoContent();
 });
-app.MapGet("/", () => "Book API is running");
 app.MapGet("/api/books/test", () =>
 {
     try
