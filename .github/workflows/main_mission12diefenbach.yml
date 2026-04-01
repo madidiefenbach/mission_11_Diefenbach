@@ -18,10 +18,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Copy frontend build into backend wwwroot
+        run: |
+          if (Test-Path backend/wwwroot) { Remove-Item backend/wwwroot -Recurse -Force }
+          New-Item -ItemType Directory -Path backend/wwwroot | Out-Null
+          Copy-Item frontend/dist/* backend/wwwroot -Recurse -Force
 
       - name: Build with dotnet
         run: dotnet build backend/backend.csproj --configuration Release

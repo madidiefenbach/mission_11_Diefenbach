@@ -21,6 +21,8 @@ var connectionString = $"Data Source={dbPath}";
 
 // Enable the CORS policy defined above
 app.UseCors("AllowFrontend");
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 // Returns distinct book categories for the category filter dropdown.
 app.MapGet("/api/books/categories", () =>
@@ -104,7 +106,6 @@ app.MapGet("/api/books", (int? page, int? pageSize, string? sortDir, string? cat
 
     var books = new List<BookDto>();
 
-    using var reader = dataCommand.ExecuteReader();
     using var reader = dataCommand.ExecuteReader();
     while (reader.Read())
     {
@@ -276,6 +277,8 @@ app.MapGet("/api/books/debug", () =>
         return Results.Problem(ex.ToString());
     }
 });
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
