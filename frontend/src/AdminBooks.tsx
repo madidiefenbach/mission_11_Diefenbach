@@ -32,7 +32,7 @@ const emptyForm: BookForm = {
   price: 0,
 }
 
-const apiBase = 'http://localhost:5288/api/books'
+const apiBase = '/api/books'
 const textFields: TextField[] = ['title', 'author', 'publisher', 'isbn', 'classification', 'category']
 
 const AdminBooks: React.FC = () => {

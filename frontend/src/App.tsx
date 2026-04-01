@@ -126,7 +126,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('http://localhost:5288/api/books/categories')
+        const response = await fetch('/api/books/categories')
         if (!response.ok) {
           throw new Error(`Error fetching categories: ${response.statusText}`)
         }
@@ -161,7 +161,7 @@ const App: React.FC = () => {
         }
 
         // Call into the ASP.NET Core backend API
-        const response = await fetch(`http://localhost:5288/api/books?${params.toString()}`)
+        const response = await fetch(`/api/books?${params.toString()}`)
         if (!response.ok) {
           throw new Error(`Error fetching books: ${response.statusText}`)
         }
