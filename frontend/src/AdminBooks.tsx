@@ -32,7 +32,13 @@ const emptyForm: BookForm = {
   price: 0,
 }
 
-const apiBase = '/api/books'
+const PRODUCTION_API_ORIGIN =
+  'https://mission12diefenbach-cjdzbuerf0ehdcas.canadacentral-01.azurewebsites.net'
+const API_BASE =
+  import.meta.env.DEV || window.location.hostname.includes('canadacentral-01.azurewebsites.net')
+    ? ''
+    : PRODUCTION_API_ORIGIN
+const apiBase = `${API_BASE}/api/books`
 const textFields: TextField[] = ['title', 'author', 'publisher', 'isbn', 'classification', 'category']
 
 const AdminBooks: React.FC = () => {

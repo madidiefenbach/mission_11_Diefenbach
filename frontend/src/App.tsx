@@ -28,6 +28,12 @@ type ViewMode = 'shopping' | 'cart'
 
 const CART_STORAGE_KEY = 'mission11-cart'
 const BROWSE_STATE_STORAGE_KEY = 'mission11-browse-state'
+const PRODUCTION_API_ORIGIN =
+  'https://mission12diefenbach-cjdzbuerf0ehdcas.canadacentral-01.azurewebsites.net'
+const API_BASE =
+  import.meta.env.DEV || window.location.hostname.includes('canadacentral-01.azurewebsites.net')
+    ? ''
+    : PRODUCTION_API_ORIGIN
 
 const App: React.FC = () => {
   // Books for the current page
@@ -126,7 +132,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/books/categories')
+        const response = await fetch(`${API_BASE}/api/books/categories`)
         if (!response.ok) {
           throw new Error(`Error fetching categories: ${response.statusText}`)
         }
@@ -161,7 +167,7 @@ const App: React.FC = () => {
         }
 
         // Call into the ASP.NET Core backend API
-        const response = await fetch(`/api/books?${params.toString()}`)
+        const response = await fetch(`${API_BASE}/api/books?${params.toString()}`)
         if (!response.ok) {
           throw new Error(`Error fetching books: ${response.statusText}`)
         }
