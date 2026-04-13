@@ -35,6 +35,21 @@ const API_BASE =
     ? ''
     : PRODUCTION_API_ORIGIN
 
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const normalizeBook = (book: any): Book => ({
+  title: typeof book?.title === 'string' ? book.title : '',
+  author: typeof book?.author === 'string' ? book.author : '',
+  publisher: typeof book?.publisher === 'string' ? book.publisher : '',
+  isbn: typeof book?.isbn === 'string' ? book.isbn : '',
+  classification: typeof book?.classification === 'string' ? book.classification : '',
+  pageCount: Math.max(0, Math.trunc(toNumber(book?.pageCount))),
+  price: Math.max(0, toNumber(book?.price)),
+})
+
 const App: React.FC = () => {
   // Books for the current page
   const [books, setBooks] = useState<Book[]>([])
@@ -88,8 +103,16 @@ const App: React.FC = () => {
     const cartJson = sessionStorage.getItem(CART_STORAGE_KEY)
     if (cartJson) {
       try {
-        const parsed = JSON.parse(cartJson) as CartItem[]
-        setCartItems(parsed)
+        const parsed = JSON.parse(cartJson) as any[]
+        const sanitized = Array.isArray(parsed)
+          ? parsed
+              .map((item) => ({
+                book: normalizeBook(item?.book),
+                quantity: Math.max(1, Math.trunc(toNumber(item?.quantity, 1))),
+              }))
+              .filter((item) => item.book.isbn)
+          : []
+        setCartItems(sanitized)
       } catch {
         setCartItems([])
       }
@@ -104,10 +127,11 @@ const App: React.FC = () => {
           sortAsc: boolean
           selectedCategory: string
         }
-        setPage(parsed.page)
-        setPageSize(parsed.pageSize)
-        setSortAsc(parsed.sortAsc)
-        setSelectedCategory(parsed.selectedCategory)
+        setPage(Math.max(1, Math.trunc(toNumber(parsed.page, 1))))
+        const safePageSize = Math.trunc(toNumber(parsed.pageSize, 5))
+        setPageSize([5, 10, 20].includes(safePageSize) ? safePageSize : 5)
+        setSortAsc(Boolean(parsed.sortAsc))
+        setSelectedCategory(typeof parsed.selectedCategory === 'string' ? parsed.selectedCategory : '')
       } catch {
         // Keep defaults if stored state cannot be parsed.
       }
@@ -174,8 +198,9 @@ const App: React.FC = () => {
 
         // API returns a paged payload: { items, totalCount }.
         const data: BooksResponse = await response.json()
-        setBooks(data.items)
-        setTotalCount(data.totalCount)
+        const safeItems = Array.isArray(data.items) ? data.items.map(normalizeBook) : []
+        setBooks(safeItems)
+        setTotalCount(Math.max(0, Math.trunc(toNumber(data.totalCount))))
       } catch (err: any) {
         setError(err.message ?? 'Unknown error')
       } finally {
