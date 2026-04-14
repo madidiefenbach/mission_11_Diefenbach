@@ -30,10 +30,14 @@ const CART_STORAGE_KEY = 'mission11-cart'
 const BROWSE_STATE_STORAGE_KEY = 'mission11-browse-state'
 const PRODUCTION_API_ORIGIN =
   'https://mission12diefenbach-cjdzbuerf0ehdcas.canadacentral-01.azurewebsites.net'
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
 const API_BASE =
-  import.meta.env.DEV || window.location.hostname.includes('canadacentral-01.azurewebsites.net')
-    ? ''
-    : PRODUCTION_API_ORIGIN
+  configuredApiBase ??
+  (import.meta.env.DEV
+    ? 'http://localhost:5288'
+    : window.location.hostname.includes('canadacentral-01.azurewebsites.net')
+      ? ''
+      : PRODUCTION_API_ORIGIN)
 
 const App: React.FC = () => {
   // Books for the current page
